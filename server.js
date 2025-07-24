@@ -3,6 +3,7 @@ const cors = require('cors');
 require('dotenv').config();
 const connectDb = require('./config/dbConnection');
 const authRoutes = require('./routes/auth');
+const ticketRoutes = require('./routes/ticket');
 
 const app = express();
 const PORT = process.env.PORT || 5005;
@@ -19,6 +20,7 @@ app.get('/', (req, res) => {
   res.send('Project Manager Backend API');
 });
 app.use('/api/auth', authRoutes);
+app.use('/api/tickets', ticketRoutes);
 
 // Start server
 app.listen(PORT, () => {
