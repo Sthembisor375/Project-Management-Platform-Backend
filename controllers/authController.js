@@ -38,4 +38,9 @@ exports.login = async (req, res) => {
   } catch (err) {
     res.status(500).json({ message: 'Server error', error: err.message });
   }
+};
+
+exports.logout = (req, res) => {
+  // For JWT, logout is handled client-side by deleting the token
+  res.status(200).json({ message: 'User logged out successfully' });
 }; 
