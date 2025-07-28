@@ -1,4 +1,5 @@
 const Ticket = require("../models/Ticket");
+const User = require("../models/User");
 
 // Create a new ticket
 exports.createTicket = async (req, res) => {
@@ -14,7 +15,15 @@ exports.createTicket = async (req, res) => {
 // Get all tickets
 exports.getTickets = async (req, res) => {
   try {
-    const tickets = await Ticket.find().populate("client", "username email");
+    let query = {};
+    
+    // If user is a client, only show tickets assigned to them
+    if (req.user.role === 'client') {
+      query.client = req.user.username; // Filter by client field matching username
+    }
+    // If user is admin (or any other role), show all tickets
+    
+    const tickets = await Ticket.find(query).populate("client", "username email");
     res.json(tickets);
   } catch (error) {
     res.status(500).json({ error: error.message });
@@ -24,10 +33,14 @@ exports.getTickets = async (req, res) => {
 // Get a ticket by ID
 exports.getTicketById = async (req, res) => {
   try {
-    const ticket = await Ticket.findById(req.params.id).populate(
-      "assignedTo",
-      "username email"
-    );
+    let query = { _id: req.params.id };
+    
+    // If user is a client, only allow access to tickets assigned to them
+    if (req.user.role === 'client') {
+      query.client = req.user.username;
+    }
+    
+    const ticket = await Ticket.findOne(query).populate("client", "username");
     if (!ticket) return res.status(404).json({ error: "Ticket not found" });
     res.json(ticket);
   } catch (error) {
@@ -38,7 +51,14 @@ exports.getTicketById = async (req, res) => {
 // Update a ticket
 exports.updateTicket = async (req, res) => {
   try {
-    const ticket = await Ticket.findByIdAndUpdate(req.params.id, req.body, {
+    let query = { _id: req.params.id };
+    
+    // If user is a client, only allow updates to tickets assigned to them
+    if (req.user.role === 'client') {
+      query.client = req.user.username;
+    }
+    
+    const ticket = await Ticket.findOneAndUpdate(query, req.body, {
       new: true,
       runValidators: true,
     });
@@ -52,7 +72,14 @@ exports.updateTicket = async (req, res) => {
 // Delete a ticket
 exports.deleteTicket = async (req, res) => {
   try {
-    const ticket = await Ticket.findByIdAndDelete(req.params.id);
+    let query = { _id: req.params.id };
+    
+    // If user is a client, only allow deletion of tickets assigned to them
+    if (req.user.role === 'client') {
+      query.client = req.user.username;
+    }
+    
+    const ticket = await Ticket.findOneAndDelete(query);
     if (!ticket) return res.status(404).json({ error: "Ticket not found" });
     res.json({ message: "Ticket deleted" });
   } catch (error) {
