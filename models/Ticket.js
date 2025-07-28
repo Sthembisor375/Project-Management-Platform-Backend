@@ -3,9 +3,10 @@ const mongoose = require("mongoose");
 const ticketSchema = new mongoose.Schema(
   {
     title: { type: String, required: true },
-    description: { type: String, required: true },
+    description: { type: String },
     status: {
       type: String,
+      required: true,
       enum: [
         "backlog",
         "in_progress",
@@ -15,7 +16,7 @@ const ticketSchema = new mongoose.Schema(
       ],
       default: "backlog",
     },
-    client: { type: mongoose.Schema.Types.ObjectId, ref: "User" },
+    client: { type: String },
   },
   { timestamps: true }
 );

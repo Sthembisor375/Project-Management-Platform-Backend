@@ -1,9 +1,10 @@
-const express = require('express');
-const cors = require('cors');
-require('dotenv').config();
-const connectDb = require('./config/dbConnection');
-const authRoutes = require('./routes/auth');
-const ticketRoutes = require('./routes/ticket');
+const express = require("express");
+const cors = require("cors");
+require("dotenv").config();
+const connectDb = require("./config/dbConnection");
+const authRoutes = require("./routes/auth");
+const ticketRoutes = require("./routes/ticket");
+const userRoutes = require("./routes/users");
 
 const app = express();
 const PORT = process.env.PORT || 5005;
@@ -16,11 +17,12 @@ app.use(cors());
 app.use(express.json());
 
 // Routes
-app.get('/', (req, res) => {
-  res.send('Project Manager Backend API');
+app.get("/", (req, res) => {
+  res.send("Project Manager Backend API");
 });
-app.use('/api/auth', authRoutes);
-app.use('/api/tickets', ticketRoutes);
+app.use("/api/auth", authRoutes);
+app.use("/api/tickets", ticketRoutes);
+app.use("/api/users", userRoutes);
 
 // Start server
 app.listen(PORT, () => {
