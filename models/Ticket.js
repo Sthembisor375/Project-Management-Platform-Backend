@@ -17,6 +17,7 @@ const ticketSchema = new mongoose.Schema(
       default: "backlog",
     },
     client: { type: String },
+    assignedTo: { type: String, default: "None" },
   },
   { timestamps: true }
 );
