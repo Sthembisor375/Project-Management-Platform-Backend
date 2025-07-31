@@ -9,22 +9,25 @@ const {
 
 exports.register = async (req, res) => {
   try {
-    console.log("🚀 Registration request received:", {
-      body: { ...req.body, password: "***" },
-      headers: req.headers,
-      method: req.method,
-      url: req.url,
-    });
+    if (process.env.NODE_ENV !== "production") {
+      console.log("🚀 Registration request received:", {
+        body: { ...req.body, password: "***" },
+        method: req.method,
+        url: req.url,
+      });
+    }
 
     const { username, email, password, role } = req.body;
 
     // Input validation
     if (!username || !email || !password) {
-      console.log("❌ Missing required fields:", {
-        username: !!username,
-        email: !!email,
-        password: !!password,
-      });
+      if (process.env.NODE_ENV !== "production") {
+        console.log("❌ Missing required fields:", {
+          username: !!username,
+          email: !!email,
+          password: !!password,
+        });
+      }
       return res.status(400).json({
         message: "All fields are required",
         missing: {
@@ -38,13 +41,17 @@ exports.register = async (req, res) => {
     // Email format validation
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     if (!emailRegex.test(email)) {
-      console.log("❌ Invalid email format:", email);
+      if (process.env.NODE_ENV !== "production") {
+        console.log("❌ Invalid email format:", email);
+      }
       return res.status(400).json({ message: "Invalid email format" });
     }
 
     // Password length validation
     if (password.length < 6) {
-      console.log("❌ Password too short:", password.length);
+      if (process.env.NODE_ENV !== "production") {
+        console.log("❌ Password too short:", password.length);
+      }
       return res
         .status(400)
         .json({ message: "Password must be at least 6 characters long" });
@@ -52,35 +59,51 @@ exports.register = async (req, res) => {
 
     // Username validation
     if (username.length < 3) {
-      console.log("❌ Username too short:", username.length);
+      if (process.env.NODE_ENV !== "production") {
+        console.log("❌ Username too short:", username.length);
+      }
       return res
         .status(400)
         .json({ message: "Username must be at least 3 characters long" });
     }
 
-    console.log("🔍 Checking for existing user with email:", email);
+    if (process.env.NODE_ENV !== "production") {
+      console.log("🔍 Checking for existing user with email:", email);
+    }
     const existingUserByEmail = await User.findOne({ email });
     if (existingUserByEmail) {
-      console.log("❌ User already exists with email:", email);
+      if (process.env.NODE_ENV !== "production") {
+        console.log("❌ User already exists with email:", email);
+      }
       return res
         .status(400)
         .json({ message: "User with this email already exists" });
     }
 
-    console.log("🔍 Checking for existing user with username:", username);
+    if (process.env.NODE_ENV !== "production") {
+      console.log("🔍 Checking for existing user with username:", username);
+    }
     const existingUserByUsername = await User.findOne({ username });
     if (existingUserByUsername) {
-      console.log("❌ User already exists with username:", username);
+      if (process.env.NODE_ENV !== "production") {
+        console.log("❌ User already exists with username:", username);
+      }
       return res.status(400).json({ message: "Username already taken" });
     }
 
-    console.log("🔐 Hashing password...");
+    if (process.env.NODE_ENV !== "production") {
+      console.log("🔐 Hashing password...");
+    }
     const hashedPassword = await bcrypt.hash(password, 10);
-    console.log("✅ Password hashed successfully");
+    if (process.env.NODE_ENV !== "production") {
+      console.log("✅ Password hashed successfully");
+    }
 
     // Set default role if not provided
     const userRole = role || "user";
-    console.log("👤 Creating user with role:", userRole);
+    if (process.env.NODE_ENV !== "production") {
+      console.log("👤 Creating user with role:", userRole);
+    }
 
     const user = new User({
       username,
@@ -89,13 +112,17 @@ exports.register = async (req, res) => {
       role: userRole,
     });
 
-    console.log("💾 Saving user to database...");
+    if (process.env.NODE_ENV !== "production") {
+      console.log("💾 Saving user to database...");
+    }
     await user.save();
-    console.log("✅ User saved successfully:", {
-      id: user._id,
-      username: user.username,
-      email: user.email,
-    });
+    if (process.env.NODE_ENV !== "production") {
+      console.log("✅ User saved successfully:", {
+        id: user._id,
+        username: user.username,
+        email: user.email,
+      });
+    }
 
     res.status(201).json({
       message: "User registered successfully",
@@ -109,7 +136,6 @@ exports.register = async (req, res) => {
   } catch (err) {
     console.error("💥 Registration error:", {
       message: err.message,
-      stack: err.stack,
       name: err.name,
       code: err.code,
     });
@@ -117,7 +143,9 @@ exports.register = async (req, res) => {
     // Handle specific MongoDB errors
     if (err.code === 11000) {
       const field = Object.keys(err.keyPattern)[0];
-      console.log("❌ Duplicate key error for field:", field);
+      if (process.env.NODE_ENV !== "production") {
+        console.log("❌ Duplicate key error for field:", field);
+      }
       return res.status(400).json({
         message: `${
           field.charAt(0).toUpperCase() + field.slice(1)
@@ -126,7 +154,9 @@ exports.register = async (req, res) => {
     }
 
     if (err.name === "ValidationError") {
-      console.log("❌ Validation error:", err.message);
+      if (process.env.NODE_ENV !== "production") {
+        console.log("❌ Validation error:", err.message);
+      }
       const errors = Object.values(err.errors).map((e) => e.message);
       return res.status(400).json({
         message: "Validation failed",
@@ -135,7 +165,9 @@ exports.register = async (req, res) => {
     }
 
     if (err.name === "CastError") {
-      console.log("❌ Cast error:", err.message);
+      if (process.env.NODE_ENV !== "production") {
+        console.log("❌ Cast error:", err.message);
+      }
       return res.status(400).json({ message: "Invalid data format" });
     }
 
@@ -153,21 +185,24 @@ exports.register = async (req, res) => {
 
 exports.login = async (req, res) => {
   try {
-    console.log("🚀 Login request received:", {
-      body: { ...req.body, password: "***" },
-      headers: req.headers,
-      method: req.method,
-      url: req.url,
-    });
+    if (process.env.NODE_ENV !== "production") {
+      console.log("🚀 Login request received:", {
+        body: { ...req.body, password: "***" },
+        method: req.method,
+        url: req.url,
+      });
+    }
 
     const { email, password } = req.body;
 
     // Input validation
     if (!email || !password) {
-      console.log("❌ Missing required fields:", {
-        email: !!email,
-        password: !!password,
-      });
+      if (process.env.NODE_ENV !== "production") {
+        console.log("❌ Missing required fields:", {
+          email: !!email,
+          password: !!password,
+        });
+      }
       return res.status(400).json({
         message: "Email and password are required",
         missing: {
@@ -180,41 +215,62 @@ exports.login = async (req, res) => {
     // Email format validation
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     if (!emailRegex.test(email)) {
-      console.log("❌ Invalid email format:", email);
+      if (process.env.NODE_ENV !== "production") {
+        console.log("❌ Invalid email format:", email);
+      }
       return res.status(400).json({ message: "Invalid email format" });
     }
 
-    console.log("🔍 Looking up user with email:", email);
+    if (process.env.NODE_ENV !== "production") {
+      console.log("🔍 Looking up user with email:", email);
+    }
     const user = await User.findOne({ email: email.toLowerCase() });
 
     if (!user) {
-      console.log("❌ User not found with email:", email);
+      if (process.env.NODE_ENV !== "production") {
+        console.log("❌ User not found with email:", email);
+      }
       return res.status(400).json({ message: "Invalid credentials" });
     }
 
-    console.log("🔐 Comparing passwords...");
+    if (process.env.NODE_ENV !== "production") {
+      console.log("🔐 Comparing passwords...");
+    }
     const isMatch = await bcrypt.compare(password, user.password);
 
     if (!isMatch) {
-      console.log("❌ Password mismatch for user:", user.username);
+      if (process.env.NODE_ENV !== "production") {
+        console.log("❌ Password mismatch for user:", user.username);
+      }
       return res.status(400).json({ message: "Invalid credentials" });
     }
 
-    console.log("✅ Password verified for user:", user.username);
-
-    if (!process.env.JWT_SECRET) {
-      console.error("💥 JWT_SECRET not configured");
-      return res.status(500).json({ message: "Server configuration error" });
+    if (process.env.NODE_ENV !== "production") {
+      console.log("✅ Password verified for user:", user.username);
     }
 
-    console.log("🎫 Generating JWT token...");
+    // Check for JWT secret with fallback
+    const jwtSecret =
+      process.env.JWT_SECRET ||
+      process.env.JWT_TOKEN_SECRET ||
+      "fallback-secret-for-development";
+
+    if (!process.env.JWT_SECRET && process.env.NODE_ENV === "production") {
+      console.warn("⚠️ JWT_SECRET not configured in production");
+    }
+
+    if (process.env.NODE_ENV !== "production") {
+      console.log("🎫 Generating JWT token...");
+    }
     const token = jwt.sign(
       { id: user._id, username: user.username, role: user.role },
-      process.env.JWT_SECRET,
+      jwtSecret,
       { expiresIn: "1h" }
     );
 
-    console.log("✅ Login successful for user:", user.username);
+    if (process.env.NODE_ENV !== "production") {
+      console.log("✅ Login successful for user:", user.username);
+    }
     res.json({
       token,
       user: {
@@ -227,7 +283,6 @@ exports.login = async (req, res) => {
   } catch (err) {
     console.error("💥 Login error:", {
       message: err.message,
-      stack: err.stack,
       name: err.name,
       code: err.code,
     });
