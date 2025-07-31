@@ -2,7 +2,7 @@
 
 ## Summary
 
-This document outlines the comprehensive error handling improvements made to both the frontend and backend to resolve the 500 server error in the signup form and provide better debugging capabilities.
+This document outlines the comprehensive error handling improvements made to both the frontend and backend to resolve the 500 server error in the signup form and provide better debugging capabilities. The error handling has been optimized for both development and production deployment environments.
 
 ## Issues Identified and Fixed
 
@@ -15,11 +15,31 @@ This document outlines the comprehensive error handling improvements made to bot
 - Updated `SignupForm.jsx` to send `username` instead of `name`
 - Added comprehensive validation on both frontend and backend
 
-### 2. Backend Error Handling Improvements
+### 2. Deployment-Friendly Error Handling
+
+#### Environment-Aware Logging
+
+- **Development**: Full verbose logging with emojis and detailed information
+- **Production**: Minimal logging to reduce noise and improve performance
+- **Conditional Logging**: All debug logs are wrapped in `process.env.NODE_ENV !== 'production'` checks
+
+#### Flexible Environment Variables
+
+- **Database Connection**: Supports multiple environment variable names (`CONNECTION_STRING`, `MONGODB_URI`, `MONGODB_URL`)
+- **JWT Secret**: Supports multiple environment variable names (`JWT_SECRET`, `JWT_TOKEN_SECRET`) with fallback
+- **Graceful Degradation**: App continues running even if some environment variables are missing
+
+#### Railway Deployment Optimizations
+
+- **No Process Exit**: Database connection failures don't crash the app in production
+- **Reduced Logging**: Less verbose logging in production to avoid log limits
+- **Flexible Configuration**: Multiple ways to configure the same settings
+
+### 3. Backend Error Handling Improvements
 
 #### Enhanced Registration Controller (`authController.js`)
 
-- **Detailed Request Logging**: Logs all incoming requests with headers and body (password masked)
+- **Environment-Aware Logging**: Detailed logging only in development
 - **Input Validation**: Validates all required fields, email format, password length, username length
 - **Duplicate Detection**: Checks for existing users by both email and username
 - **Specific Error Types**: Handles MongoDB duplicate key errors, validation errors, and cast errors
@@ -27,27 +47,28 @@ This document outlines the comprehensive error handling improvements made to bot
 
 #### Enhanced Login Controller (`authController.js`)
 
-- **Request Logging**: Similar detailed logging for login requests
+- **Environment-Aware Logging**: Similar conditional logging for login requests
 - **Input Validation**: Validates email format and required fields
-- **JWT Secret Validation**: Checks if JWT_SECRET is configured
+- **JWT Secret Validation**: Flexible JWT secret configuration with fallbacks
 - **Enhanced Error Handling**: Specific error types and detailed responses
 
 #### Global Error Handling Middleware (`server.js`)
 
-- **Request Logging Middleware**: Logs all incoming requests with timestamps
+- **Conditional Request Logging**: Logs requests only in development
 - **404 Handler**: Proper handling of non-existent routes
-- **Global Error Handler**: Catches all unhandled errors with detailed logging
+- **Global Error Handler**: Catches all unhandled errors with environment-aware logging
 - **Specific Error Types**: Handles ValidationError, CastError, duplicate keys, JWT errors
 - **Environment-Aware Responses**: Shows detailed errors in development, generic in production
 
 #### Database Connection Improvements (`dbConnection.js`)
 
-- **Connection String Validation**: Checks if CONNECTION_STRING is configured
+- **Multiple Connection String Support**: `CONNECTION_STRING`, `MONGODB_URI`, `MONGODB_URL`
+- **Graceful Failure**: Doesn't crash the app if connection fails in production
 - **Connection Options**: Added timeout and retry options
 - **Event Monitoring**: Monitors connection, disconnection, and reconnection events
-- **Detailed Error Messages**: Specific error messages for different connection issues
+- **Environment-Aware Error Handling**: Different behavior for development vs production
 
-### 3. Frontend Error Handling Improvements
+### 4. Frontend Error Handling Improvements
 
 #### Enhanced SignupForm (`SignupForm.jsx`)
 
@@ -67,7 +88,7 @@ This document outlines the comprehensive error handling improvements made to bot
 
 ## Debugging Features Added
 
-### Console Logging with Emojis
+### Console Logging with Emojis (Development Only)
 
 - 🚀 Request starting
 - 📤 Request payload (password masked)
@@ -89,11 +110,35 @@ This document outlines the comprehensive error handling improvements made to bot
 5. **JWT Errors**: Token generation, validation issues
 6. **Cast Errors**: Invalid data formats
 
-### Environment Variables Required
+### Environment Variables Supported
 
-- `CONNECTION_STRING`: MongoDB connection string
-- `JWT_SECRET`: Secret for JWT token generation
-- `NODE_ENV`: Environment (development/production)
+- **Database**: `CONNECTION_STRING`, `MONGODB_URI`, `MONGODB_URL`
+- **JWT**: `JWT_SECRET`, `JWT_TOKEN_SECRET`
+- **Environment**: `NODE_ENV` (development/production)
+
+## Deployment Configuration
+
+### Railway Deployment
+
+The application is now optimized for Railway deployment with:
+
+- **Flexible Environment Variables**: Multiple naming conventions supported
+- **Graceful Degradation**: Continues running even with missing configuration
+- **Production Logging**: Reduced logging to avoid log limits
+- **No Process Crashes**: Database issues don't crash the app
+
+### Environment Variable Setup
+
+```bash
+# Required for Railway
+CONNECTION_STRING=mongodb+srv://...
+JWT_SECRET=your-secret-key
+NODE_ENV=production
+
+# Alternative names also supported
+MONGODB_URI=mongodb+srv://...
+JWT_TOKEN_SECRET=your-secret-key
+```
 
 ## Testing the Improvements
 
@@ -117,13 +162,9 @@ This document outlines the comprehensive error handling improvements made to bot
 
 ### Backend Logs
 
-All requests and errors are now logged with detailed information:
-
-- Request method, path, and timestamp
-- Request headers and body (sensitive data masked)
-- Response status and data
-- Error stack traces and error types
-- Database connection status
+- **Development**: Full verbose logging with all request details
+- **Production**: Minimal logging with only critical errors and warnings
+- **Environment-Aware**: Different logging levels based on NODE_ENV
 
 ### Frontend Console
 
@@ -149,8 +190,8 @@ All API calls are logged with:
 1. **500 Server Error**
 
    - Check server logs for detailed error information
-   - Verify environment variables are set
-   - Check database connection
+   - Verify environment variables are set (multiple names supported)
+   - Check database connection (app continues running even if DB fails)
 
 2. **400 Bad Request**
 
@@ -165,9 +206,10 @@ All API calls are logged with:
    - Verify API endpoint URLs
 
 4. **Database Errors**
-   - Check MongoDB connection string
+   - Check MongoDB connection string (multiple variable names supported)
    - Verify database server is running
    - Check network connectivity
+   - App continues running even if DB connection fails
 
 ### Debug Commands
 
@@ -185,3 +227,12 @@ curl -X POST http://localhost:5005/api/auth/login \
   -H "Content-Type: application/json" \
   -d '{"email":"test@example.com","password":"123456"}'
 ```
+
+### Railway Deployment Checklist
+
+- [ ] Set `NODE_ENV=production`
+- [ ] Set database connection string (`CONNECTION_STRING` or `MONGODB_URI`)
+- [ ] Set JWT secret (`JWT_SECRET` or `JWT_TOKEN_SECRET`)
+- [ ] Verify app starts without crashing
+- [ ] Test registration and login endpoints
+- [ ] Check logs for any warnings or errors

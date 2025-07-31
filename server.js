@@ -12,15 +12,16 @@ const PORT = process.env.PORT || 5005;
 // Connect to MongoDB
 connectDb();
 
-// Request logging middleware
+// Request logging middleware (less verbose in production)
 app.use((req, res, next) => {
-  console.log(`📨 ${req.method} ${req.path} - ${new Date().toISOString()}`);
-  console.log(`📋 Headers:`, req.headers);
-  if (req.body && Object.keys(req.body).length > 0) {
-    console.log(`📦 Body:`, {
-      ...req.body,
-      password: req.body.password ? "***" : undefined,
-    });
+  if (process.env.NODE_ENV !== "production") {
+    console.log(`📨 ${req.method} ${req.path} - ${new Date().toISOString()}`);
+    if (req.body && Object.keys(req.body).length > 0) {
+      console.log(`📦 Body:`, {
+        ...req.body,
+        password: req.body.password ? "***" : undefined,
+      });
+    }
   }
   next();
 });
@@ -40,7 +41,9 @@ app.use("/api/users", userRoutes);
 
 // 404 handler
 app.use((req, res, next) => {
-  console.log(`❌ 404 - Route not found: ${req.method} ${req.path}`);
+  if (process.env.NODE_ENV !== "production") {
+    console.log(`❌ 404 - Route not found: ${req.method} ${req.path}`);
+  }
   res.status(404).json({
     message: "Route not found",
     path: req.path,
@@ -52,12 +55,10 @@ app.use((req, res, next) => {
 app.use((err, req, res, next) => {
   console.error("💥 Global error handler caught:", {
     message: err.message,
-    stack: err.stack,
     name: err.name,
     code: err.code,
     url: req.url,
     method: req.method,
-    body: req.body,
   });
 
   // Handle specific error types
@@ -114,7 +115,15 @@ app.use((err, req, res, next) => {
 app.listen(PORT, () => {
   console.log(`🚀 Server running on port ${PORT}`);
   console.log(`🌍 Environment: ${process.env.NODE_ENV || "development"}`);
-  console.log(
-    `📊 MongoDB: ${process.env.MONGODB_URI ? "Connected" : "Not configured"}`
-  );
+
+  // Only log database status in development
+  if (process.env.NODE_ENV !== "production") {
+    console.log(
+      `📊 MongoDB: ${
+        process.env.CONNECTION_STRING || process.env.MONGODB_URI
+          ? "Configured"
+          : "Not configured"
+      }`
+    );
+  }
 });

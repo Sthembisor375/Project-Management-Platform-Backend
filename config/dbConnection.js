@@ -3,16 +3,24 @@ const mongoose = require("mongoose");
 const connectDb = async () => {
   try {
     console.log("🔌 Attempting to connect to MongoDB...");
-    console.log(
-      "📡 Connection string:",
-      process.env.CONNECTION_STRING ? "Configured" : "Missing"
-    );
 
-    if (!process.env.CONNECTION_STRING) {
-      throw new Error("MongoDB connection string is not configured");
+    // Use Railway's environment variable or fallback to local development
+    const connectionString =
+      process.env.CONNECTION_STRING ||
+      process.env.MONGODB_URI ||
+      process.env.MONGODB_URL;
+
+    if (!connectionString) {
+      console.warn(
+        "⚠️ No MongoDB connection string found. Please check your environment variables."
+      );
+      console.log(
+        "📡 Expected variables: CONNECTION_STRING, MONGODB_URI, or MONGODB_URL"
+      );
+      return; // Don't exit process, let the app continue
     }
 
-    const connect = await mongoose.connect(process.env.CONNECTION_STRING, {
+    const connect = await mongoose.connect(connectionString, {
       useNewUrlParser: true,
       useUnifiedTopology: true,
       serverSelectionTimeoutMS: 5000,
@@ -41,7 +49,6 @@ const connectDb = async () => {
       message: err.message,
       name: err.name,
       code: err.code,
-      stack: err.stack,
     });
 
     if (err.name === "MongoNetworkError") {
@@ -58,7 +65,12 @@ const connectDb = async () => {
       );
     }
 
-    process.exit(1);
+    // Don't exit process in production, let the app continue
+    if (process.env.NODE_ENV === "production") {
+      console.warn("⚠️ Continuing without database connection in production");
+    } else {
+      process.exit(1);
+    }
   }
 };
 
